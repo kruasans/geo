@@ -24,11 +24,14 @@ struct TowerCoverage {
 };
 
 
-void calculateCoverage(double towerLat, double towerLon, double areaSideKm, double stepKm, const std::string& towerId);
+void calculateCoverage(double towerLat, double towerLon, double areaSideKm, double stepKm,
+                       double& minLat, double& maxLat, double& minLon, double& maxLon,
+                       double& stepDegLat, double& stepDegLon);
 
 void visiblePoints(double towerLat, double towerLon, double areaSideKm, double stepKm, const std::string& towerId);
 
-bool isObjectVisibleFromTower(double objectLat, double objectLon, const std::string& towerId);
+bool isObjectVisibleFromTower(const std::string& towerId, double minLat, double maxLat,
+                              double minLon, double maxLon, double stepDegLat, double stepDegLon);
 
 bool isPointCoveredByTower(const Point& point, const std::string& towerId);
 

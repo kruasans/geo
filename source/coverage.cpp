@@ -110,7 +110,7 @@ bool isObjectVisibleFromTower(const std::string& towerId, double minLat,
     }
 
     // Проверяем, что хотя бы 80% точек объекта покрыты
-    if ((coveredPoints / static_cast<double>(totalPoints)) >= 0.1)
+    if ((coveredPoints / static_cast<double>(totalPoints)) >= 0.7)
     {
         return true; // Объект покрыт на 80% и более
     }
