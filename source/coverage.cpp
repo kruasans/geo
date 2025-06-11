@@ -152,28 +152,24 @@ bool isIntersecting(const TowerCoverage& towerCoverage1, const TowerCoverage& to
 
 void selectTowersForMaxCoverage(double targetLat, double targetLon)
 {
-    std::vector<std::string> selectedTowers;
     std::vector<std::string> candidates;
+    std::vector<std::string> selectedTowers;
     double minLat, maxLat, minLon, maxLon, stepDegLat, stepDegLon;
-    double areaSideKm = 0.1; // Размер объекта 100x100 м = 0.1 км
-    double stepKm = 0.01; // Шаг для точек видимости
+    double areaSideKm = 0.1;  // Размер объекта 100x100 м = 0.1 км
+    double stepKm = 0.01;     // Шаг для точек видимости
 
     // Получаем координаты объекта
-    calculateCoverage(targetLat, targetLon, areaSideKm, stepKm, minLat, maxLat, minLon, maxLon, stepDegLat, stepDegLon);
+    calculateCoverage(targetLat, targetLon, areaSideKm, stepKm, minLat, maxLat, minLon, maxLon,
+                      stepDegLat, stepDegLon);
 
-    // Шаг 1: Ищем все вышки, которые могут покрывать объект
+    // Шаг 1. Собираем вышки, которые покрывают объект хотя бы на 80%
     for (const auto& tower : towerCoverages)
     {
         const auto& towerId = tower.first;
-        const auto& coverage = tower.second;
-
-        // Проверка видимости объекта с этой вышки
-        if (isObjectVisibleFromTower(towerId, minLat, maxLat, minLon, maxLon, stepDegLat,
-                                     stepDegLon))
+        if (isObjectVisibleFromTower(towerId, minLat, maxLat, minLon, maxLon, stepDegLat, stepDegLon))
         {
             candidates.push_back(towerId);
             std::cout << "Вышка " << towerId << " покрывает объект" << std::endl;
-            // Если вышка видит объект, добавляем её в кандидаты
         }
     }
 
@@ -183,79 +179,48 @@ void selectTowersForMaxCoverage(double targetLat, double targetLon)
         return;
     }
 
-    // Шаг 2: выбираем вышку с максимальным покрытием
-    std::string bestTower;
-    size_t maxPoints = 0;
-    for (const auto& id : candidates)
+    // Сортируем кандидатов по размеру покрытия (от большего к меньшему)
+    std::sort(candidates.begin(), candidates.end(), [](const std::string& a, const std::string& b) {
+        return towerCoverages[a].visiblePoints.size() > towerCoverages[b].visiblePoints.size();
+    });
+
+    // Первую (лучшую) вышку выбираем всегда
+    selectedTowers.push_back(candidates.front());
+    std::vector<Point> coveredPoints = towerCoverages[candidates.front()].visiblePoints;
+
+    // Обрабатываем оставшиеся вышки
+    for (size_t i = 1; i < candidates.size(); ++i)
     {
-        size_t size = towerCoverages[id].visiblePoints.size();
-        if (size > maxPoints)
+        const std::string& candidate = candidates[i];
+        size_t newCoverage = 0;
+
+        for (const auto& point : towerCoverages[candidate].visiblePoints)
         {
-            maxPoints = size;
-            bestTower = id;
-        }
-    }
-
-    selectedTowers.push_back(bestTower);
-
-    std::vector<Point> coveredPoints = towerCoverages[bestTower].visiblePoints;
-    candidates.erase(std::remove(candidates.begin(), candidates.end(), bestTower), candidates.end());
-
-    bool added = true;
-    while (added && !candidates.empty())
-    {
-        added = false;
-        std::string nextTower;
-        size_t maxNewCoverage = 0;
-
-        for (const auto& candidate : candidates)
-        {
-            bool intersects = false;
-            for (const auto& selected : selectedTowers)
+            bool alreadyCovered = false;
+            for (const auto& cp : coveredPoints)
             {
-                if (isIntersecting(towerCoverages[selected], towerCoverages[candidate]))
+                if (std::abs(cp.lat - point.lat) < 1e-6 && std::abs(cp.lon - point.lon) < 1e-6)
                 {
-                    intersects = true;
+                    alreadyCovered = true;
                     break;
                 }
             }
-            if (!intersects)
-                continue;
-
-            size_t newCoverage = 0;
-            for (const auto& point : towerCoverages[candidate].visiblePoints)
-            {
-                bool alreadyCovered = false;
-                for (const auto& cp : coveredPoints)
-                {
-                    if (std::abs(cp.lat - point.lat) < 1e-6 && std::abs(cp.lon - point.lon) < 1e-6)
-                    {
-                        alreadyCovered = true;
-                        break;
-                    }
-                }
-                if (!alreadyCovered)
-                    newCoverage++;
-            }
-
-            if (newCoverage > maxNewCoverage)
-            {
-                maxNewCoverage = newCoverage;
-                nextTower = candidate;
-            }
+            if (!alreadyCovered)
+                newCoverage++;
         }
 
-        if (maxNewCoverage > 0)
+        // Если новая вышка добавляет менее 60% новых точек от своего покрытия,
+        // она не нужна
+        size_t totalCoverage = towerCoverages[candidate].visiblePoints.size();
+        if (newCoverage >= static_cast<size_t>(0.6 * totalCoverage))
         {
-            selectedTowers.push_back(nextTower);
-            coveredPoints.insert(coveredPoints.end(), towerCoverages[nextTower].visiblePoints.begin(),
-                                 towerCoverages[nextTower].visiblePoints.end());
-            candidates.erase(std::remove(candidates.begin(), candidates.end(), nextTower), candidates.end());
-            added = true;
+            selectedTowers.push_back(candidate);
+            coveredPoints.insert(coveredPoints.end(), towerCoverages[candidate].visiblePoints.begin(),
+                                 towerCoverages[candidate].visiblePoints.end());
         }
     }
 
-    std::cout << "Выбранные вышки: \n";
+    std::cout << "Выбранные вышки:\n";
     for (const auto& id : selectedTowers)
     {
         std::cout << id << std::endl;
