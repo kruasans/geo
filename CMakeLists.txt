@@ -5,8 +5,6 @@ set(CMAKE_CXX_STANDARD 20)
 
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 
-
-
 add_executable(geoexport source/main.cpp
         header/height_map.h
         header/visibility.h
@@ -16,6 +14,8 @@ add_executable(geoexport source/main.cpp
         source/test_daleted_data.cpp
         source/coverage.cpp
         header/coverage.h
+        header/config.h
+        source/config.cpp
 )
 
 target_link_libraries(geoexport sfml-graphics sfml-window sfml-system)

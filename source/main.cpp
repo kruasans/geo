@@ -8,6 +8,7 @@
 #include "../header/coverage.h"
 #include "../header/height_map.h"
 #include "../header/visibility.h"
+#include "../header/config.h"
 
 void showMenu()
 {
@@ -26,8 +27,9 @@ void clearInput()
 
 int main()
 {
+    loadConfig();
+
     bool running = true;
-    double objectHeight = 0.0;
 
     while (running)
     {
@@ -75,7 +77,7 @@ int main()
                 std::string filename = "../data/towers.txt";
                 std::ifstream file(filename);
                 std::string towerId;
-                double lat, lon;
+                double lat, lon, height;
                 double objectLat, objectLon;
 
                 if (!file)
@@ -101,9 +103,9 @@ int main()
                 std::string firstLine;
                 std::getline(file, firstLine);
 
-                while (file >> towerId >> lat >> lon)
+                while (file >> towerId >> lat >> lon >> height)
                 {
-                    visiblePoints(lat, lon, 12.0, 0.01, towerId); // 12 км квадрат, шаг 30 метров
+                    visiblePoints(lat, lon, height, towerAreaSideKm, towerStepKm, towerId); // 12 км квадрат, шаг 30 метров
                 }
 
                 file.close();

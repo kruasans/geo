@@ -11,15 +11,18 @@ struct Object
 };
 
 // Структура для хранения точки
-struct Point {
-    double lat;  // широта
-    double lon;  // долгота
+struct Point
+{
+    double lat; // широта
+    double lon; // долгота
 };
 
 // Структура для хранения информации о покрытии для каждой вышки
-struct TowerCoverage {
+struct TowerCoverage
+{
     double towerLat;
     double towerLon;
+    double towerHeight;
     std::vector<Point> visiblePoints;
 };
 
@@ -28,14 +31,15 @@ void calculateCoverage(double towerLat, double towerLon, double areaSideKm, doub
                        double& minLat, double& maxLat, double& minLon, double& maxLon,
                        double& stepDegLat, double& stepDegLon);
 
-void visiblePoints(double towerLat, double towerLon, double areaSideKm, double stepKm, const std::string& towerId);
+void visiblePoints(double towerLat, double towerLon, double towerHeight, double areaSideKm, double stepKm,
+                   const std::string& towerId);
 
 bool isObjectVisibleFromTower(const std::string& towerId, double minLat, double maxLat,
                               double minLon, double maxLon, double stepDegLat, double stepDegLon);
 
 bool isPointCoveredByTower(const Point& point, const std::string& towerId);
 
-bool isIntersecting(const TowerCoverage& towerCoverage1, const TowerCoverage& towerCoverage2);
+size_t intersectionSize(const TowerCoverage& towerCoverage1, const TowerCoverage& towerCoverage2);
 
 void selectTowersForMaxCoverage(double targetLat, double targetLon);
 
